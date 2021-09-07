@@ -1,0 +1,31 @@
+#!/bin/bash
+RROOT=$(dirname $(realpath $0))
+
+case $1 in
+	b)
+		echo "Building Rmenu"
+		cd $RROOT/tmp/Rmenu
+		make -j$(nproc)
+
+		echo "Building U-Boot"
+		;;
+	d)
+		cd $RROOT
+		mkdir -p tmp
+		cd tmp
+
+		if [ -d Rmenu ]; then
+			(cd $RROOT/tmp/Rmenu; git pull)
+		else
+			git clone git@github.com:R-ARM/Rmenu.git
+		fi
+
+		if [ -d u-boot ]; then
+			(cd $RROOT/tmp/u-boot; git pull)
+		else
+			git clone git@github.com:Maccraft123/u-boot.git --depth 1
+		fi
+		;;
+esac
+
+echo "Done"
