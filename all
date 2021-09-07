@@ -2,6 +2,13 @@
 RROOT=$(dirname $(realpath $0))
 set -e
 
+if [ $(id -u) != 0 ]; then
+	echo "You must be running $0 as root"
+	exit 1
+fi
+
+
+
 case $1 in
 	b)
 		echo "Building Rmenu"
@@ -19,6 +26,69 @@ case $1 in
 		cp $RROOT/conf/u-boot $RROOT/tmp/u-boot/.config
 		make BL31=$RROOT/tmp/ATF/build/px30/release/bl31/bl31.elf ARCH=arm -j$(nproc)
 		echo "Done building U-Boot"
+
+		# TODO build linux kernel
+
+		echo "Building BusyBox"
+		cd $RROOT/tmp/busybox
+		cp $RROOT/conf/busybox $RROOT/tmp/busybox/.config
+		make -j$(nproc)
+		mkdir $RROOT/tmp/busybox/install
+		echo "Done building BusyBox"
+		;;
+	i)
+		echo "Installing Revolution"
+
+		export SD=$2
+		if [ -z "$SD" ]; then
+			echo "No MicroSD card was given!"
+			exit 1
+		fi
+
+		# set up partitions
+		printf 'o
+n
+p
+1
+16384
++4G
+w' | fdisk $SD
+
+		partx $SD
+		mkfs.ext4 -F ${SD}1
+		mkdir -p $RROOT/tmp/root
+
+
+		# install busybox
+		mount ${SD}1 $RROOT/tmp/busybox/install
+		cd $RROOT/tmp/busybox
+		make install
+		umount $RROOT/tmp/busybox/install
+
+		# set up basic dir structure
+		mount ${SD}1 $RROOT/tmp/root
+		mkdir $RROOT/tmp/root/sys
+		mkdir $RROOT/tmp/root/dev
+		mkdir $RROOT/tmp/root/proc
+		mkdir $RROOT/tmp/root/tmp
+		mkdir $RROOT/tmp/root/boot
+
+		# install programs
+		cp $RROOT/scripts/init $RROOT/tmp/root/sbin/init
+		chmod a+x $RROOT/tmp/root/sbin/init
+
+		# install linux kernel
+		cp $RROOT/tmp/linux/arch/arm64/boot/dts/rockchip/rk3326*dtb $RROOT/tmp/root/boot/
+		cp $RROOT/tmp/linux/arch/arm64/boot/Image $RROOT/tmp/root/boot/Image
+
+		# install u-boot
+		dd if=$RROOT/tmp/u-boot/idbloader.img of=$SD bs=512 seek=64
+		dd if=$RROOT/tmp/u-boot/u-boot.itb of=$SD bs=512 seek=512
+
+
+		umount $RROOT/tmp/root
+		sync
+		echo "Done!"
 		;;
 	d)
 		cd $RROOT
@@ -41,6 +111,12 @@ case $1 in
 			(cd $RROOT/tmp/u-boot; git pull)
 		else
 			git clone git@github.com:Maccraft123/u-boot.git --depth 1
+		fi
+
+		if [ -d busybox ]; then
+			(cd $RROOT/tmp/busybox; git pull)
+		else
+			git clone git://busybox.net/busybox.git --depth 1
 		fi
 		;;
 esac
