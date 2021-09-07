@@ -1,13 +1,24 @@
 #!/bin/bash
 RROOT=$(dirname $(realpath $0))
+set -e
 
 case $1 in
 	b)
 		echo "Building Rmenu"
 		cd $RROOT/tmp/Rmenu
 		make -j$(nproc)
+		echo "Done building Rmenu"
+
+		echo "Building ATF"
+		cd $RROOT/tmp/ATF
+		make PLAT=px30 DEBUG=0 bl31 -j$(nproc)
+		echo "Done buidling ATF"
 
 		echo "Building U-Boot"
+		cd $RROOT/tmp/u-boot
+		cp $RROOT/conf/u-boot $RROOT/tmp/u-boot/.config
+		make BL31=$RROOT/tmp/ATF/build/px30/release/bl31/bl31.elf ARCH=arm -j$(nproc)
+		echo "Done building U-Boot"
 		;;
 	d)
 		cd $RROOT
@@ -18,6 +29,12 @@ case $1 in
 			(cd $RROOT/tmp/Rmenu; git pull)
 		else
 			git clone git@github.com:R-ARM/Rmenu.git
+		fi
+
+		if [ -d ATF ]; then
+			(cd $RROOT/tmp/ATF; git pull)
+		else
+			git clone https://github.com/ARM-software/arm-trusted-firmware.git ATF
 		fi
 
 		if [ -d u-boot ]; then
