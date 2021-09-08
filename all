@@ -2,13 +2,6 @@
 RROOT=$(dirname $(realpath $0))
 set -e
 
-if [ $(id -u) != 0 ]; then
-	echo "You must be running $0 as root"
-	exit 1
-fi
-
-
-
 case $1 in
 	b)
 		echo "Building Rmenu"
@@ -29,12 +22,37 @@ case $1 in
 
 		# TODO build linux kernel
 
+		echo "Building musl"
+		cd $RROOT/tmp/musl
+		./configure --prefix=$RROOT/tmp/root --enable-wrapper=all
+		make -j$(nproc)
+		echo "Done building musl"
+	
+		echo "Building alsa-lib"
+		cd $RROOT/tmp/alsa-lib
+		libtoolize --force --copy --automake
+		aclocal
+		autoheader
+		automake --foreign --copy --add-missing
+		autoconf
+		./configure --prefix=$RROOT/tmp/root/ --disable-aload --enable-rawmidi --disable-old-symbols --disable-python
+		make -j$(nproc)
+		automake --add-missing
+		echo "Done building alsa-lib"
+
 		echo "Building BusyBox"
 		cd $RROOT/tmp/busybox
 		cp $RROOT/conf/busybox $RROOT/tmp/busybox/.config
 		make -j$(nproc)
 		mkdir $RROOT/tmp/busybox/install
 		echo "Done building BusyBox"
+
+		echo "Building SDL"
+		cd $RROOT/tmp/SDL
+		./autogen.sh
+		./configure --prefix=$RROOT/tmp/root/ --enable-haptic=no --enable-mmx=no --enable-3dnow=no --enable-sse=no --enable-sse2=no --enable-sse3=no --enable-oss=no --enable-altivec=no --enable-alsa=yes --enable-alsa-shared=no --enable-jack=no --enable-esd=no --enable-pipewire=no --enable-pulseaudio=no --enable-arts=no --enable-nas=no --enable-sndio=no --enable-diskaudio=no --enable-arm-simd=yes --enable-arm-neon=yes --enable-video-wayland=yes --enable-video-wayland-qt-touch=no --enable-libdecor=no --enable-video-rpi=no --enable-video-x11=no --enable-video-vivante=no --enable-video-cocoa=no --enable-video-metal=no --enable-render-metal=no --enable-video-directfb=no --enable-video-kmsdrm=yes --enable-video-vulkan=no --enable-libudev=no --enable-dbus=no --enable-ime=no --enable-ibus=no --enable-fcitx=no --enable-joystick-mfi=no --enable-directx=no --enable-wasapi=no --enable-xinput=no --enable-hidapi=no --enable-render-d3d=no
+		make -j$(nproc)
+		echo "Done building SDL"
 		;;
 	i)
 		echo "Installing Revolution"
@@ -42,6 +60,11 @@ case $1 in
 		export SD=$2
 		if [ -z "$SD" ]; then
 			echo "No MicroSD card was given!"
+			exit 1
+		fi
+
+		if [ $(id -u) != 0 ]; then
+			echo "You must be running $0 as root"
 			exit 1
 		fi
 
@@ -72,6 +95,9 @@ w' | fdisk $SD
 		mkdir $RROOT/tmp/root/proc
 		mkdir $RROOT/tmp/root/tmp
 		mkdir $RROOT/tmp/root/boot
+
+		# install libraries
+		make -C $RROOT/tmp/SDL install
 
 		# install programs
 		cp $RROOT/scripts/init $RROOT/tmp/root/sbin/init
@@ -113,10 +139,28 @@ w' | fdisk $SD
 			git clone git@github.com:Maccraft123/u-boot.git --depth 1
 		fi
 
+		if [ -d musl ]; then
+			(cd $RROOT/tmp/musl; git pull)
+		else
+			git clone git://git.musl-libc.org/musl --depth 1
+		fi
+
+		if [ -d alsa-lib ]; then
+			(cd $RROOT/tmp/alsa-lib; git pull)
+		else
+			git clone https://github.com/alsa-project/alsa-lib.git --depth 1
+		fi
+
 		if [ -d busybox ]; then
 			(cd $RROOT/tmp/busybox; git pull)
 		else
 			git clone git://busybox.net/busybox.git --depth 1
+		fi
+
+		if [ -d SDL ]; then
+			(cd $RROOT/tmp/busybox; git pull)
+		else
+			git clone https://github.com/libsdl-org/SDL.git --depth 1
 		fi
 		;;
 esac
