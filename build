@@ -1,0 +1,60 @@
+#!/bin/bash
+RAGNAROOT=$(dirname $(realpath $0))
+
+function down_upd()
+{
+	cd $RAGNAROOT/tmp
+	if [ -d $1 ]; then
+		cd $1
+		git pull
+	else
+		git clone git@github.com:R-ARM/$1.git
+		cd $1
+	fi
+}
+
+mkdir -p $RAGNAROOT/tmp
+down_upd buildroot
+down_upd u-boot
+down_upd arm-trusted-firmware
+
+# makes root and kernel
+#make -C $RAGNAROOT/tmp/buildroot r_defconfig
+#make -C $RAGNAROOT/tmp/buildroot
+
+# make u-boot and atf
+
+env CROSS_COMPILE=aarch64-linux-gnu- PLAT=px30 DEBUG=0 make -C $RAGNAROOT/tmp/arm-trusted-firmware bl31 -j$(nproc)
+
+env ARCH=arm CROSS_COMPILE=aarch64-linux-gnu- make -C $RAGNAROOT/tmp/u-boot r_defconfig
+env BL31=$RAGNAROOT/tmp/atf/build/px30/release/bl31/bl31.elf ARCH=arm CROSS_COMPILE=aarch64-linux-gnu- make -C $RAGNAROOT/tmp/u-boot -j$(nproc)
+
+SD="$1"
+
+ls $SD || exit 1
+
+printf 'o
+n
+p
+1
+2048
++4G
+n
+p
+2
+w
+' | fdisk $SD
+partx $SD
+
+# system partition
+mkfs.ext4 -F ${SD}1
+# data partition
+mkfs.fat -F32 ${SD}2
+
+mkdir -p $RAGNAROOT/mnt
+mount ${SD}1 $RAGNAROOT/mnt
+
+
+# u-boot
+dd if=$RAGNAROOT/tmp/u-boot/idbloader.img of=$SD bs=512 seek=64
+dd if=$RAGNAROOT/tmp/u-boot/u-boot.itb of=$SD bs=512 seek=512
