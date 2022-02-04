@@ -1,6 +1,8 @@
 #!/bin/bash
 RAGNAROOT=$(dirname $(realpath $0))
 
+[ -z "$1" ] && exit 1
+
 set -e
 
 function down_upd()
@@ -24,9 +26,10 @@ down_upd arm-trusted-firmware
 #make -C $RAGNAROOT/tmp/buildroot r_defconfig
 #make -C $RAGNAROOT/tmp/buildroot
 
+
 # make u-boot and atf
 
-env CROSS_COMPILE=aarch64-linux-gnu- PLAT=px30 DEBUG=0 make -C $RAGNAROOT/tmp/arm-trusted-firmware bl31 -j$(nproc)
+make bl31 CROSS_COMPILE=aarch64-linux-gnu- PLAT=px30 DEBUG=0 -C $RAGNAROOT/tmp/arm-trusted-firmware -j$(nproc)
 
 env ARCH=arm CROSS_COMPILE=aarch64-linux-gnu- make -C $RAGNAROOT/tmp/u-boot r_defconfig
 env BL31=$RAGNAROOT/tmp/arm-trusted-firmware/build/px30/release/bl31/bl31.elf ARCH=arm CROSS_COMPILE=aarch64-linux-gnu- make -C $RAGNAROOT/tmp/u-boot -j$(nproc)
@@ -58,6 +61,37 @@ mkfs.fat -F32 ${SD}2
 mkdir -p $RAGNAROOT/mnt
 mount ${SD}1 $RAGNAROOT/mnt
 
+bsdtar xf $RAGNAROOT/tmp/buildroot/output/images/rootfs.tar -C $RAGNAROOT/mnt/
+cp $RAGNAROOT/tmp/buildroot/output/build/linux-new/arch/arm64/boot/dts/rockchip/rk3326*dtb $RAGNAROOT/mnt/boot/
+
+# random post install
+mkdir -p $RAGNAROOT/mnt/temp
+chmod 700 $RAGNAROOT/mnt/temp
+echo '#!/bin/sh' > $RAGNAROOT/mnt/etc/init.d/S20weston
+echo 'export XDG_RUNTIME_DIR=/temp' >> $RAGNAROOT/mnt/etc/init.d/S20weston
+echo 'if [ "$1" = "start" ]; then' >> $RAGNAROOT/mnt/etc/init.d/S20weston
+echo 'weston --config=/root/.config/weston.ini --drm-device=card1 --seat=0 --continue-without-input --shell=desktop-shell.so >/tmp/weston.log 2>&1 &' >> $RAGNAROOT/mnt/etc/init.d/S20weston
+echo 'echo $! > /tmp/weston_pid' >> $RAGNAROOT/mnt/etc/init.d/S20weston
+echo 'fi' >> $RAGNAROOT/mnt/etc/init.d/S20weston
+echo 'if [ "$1" = "stop" ]; then kill -9 $(cat /tmp/weston_pid); fi' >> $RAGNAROOT/mnt/etc/init.d/S20weston
+chmod a+x $RAGNAROOT/mnt/etc/init.d/S20weston
+
+mkdir -p $RAGNAROOT/mnt/root/.config
+echo '[core]
+repaint-window=15
+[output]
+name=DSI-1
+transform=rotate-90
+[autolaunch]
+path=/bin/rmenu
+[shell]
+panel-position=none' > $RAGNAROOT/mnt/root/.config/weston.ini
+
+
+# TODO: rootfs
+umount $RAGNAROOT/mnt
+
+# TODO: data partition
 
 # u-boot
 dd if=$RAGNAROOT/tmp/u-boot/idbloader.img of=$SD bs=512 seek=64
