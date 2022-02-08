@@ -88,7 +88,10 @@ path=/bin/rmenu
 panel-position=none' > $RAGNAROOT/mnt/root/.config/weston.ini
 
 
-# TODO: rootfs
+
+mkdir -p $RAGNAROOT/mnt/.mednafen/
+cp $RAGNAROOT/mednafen.cfg $RAGNAROOT/mnt/.mednafen/mednafen.cfg
+#echo 'flash 128' > $RAGNAROOT/.mednafen/sav/RRT.type
 umount $RAGNAROOT/mnt
 
 # TODO: data partition
