@@ -80,6 +80,7 @@ chmod a+x $RAGNAROOT/mnt/etc/init.d/S20weston
 
 mkdir -p $RAGNAROOT/mnt/root/.config
 echo '[core]
+idle-time=0
 repaint-window=15
 [output]
 name=DSI-1
