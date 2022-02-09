@@ -72,7 +72,7 @@ echo 'export XDG_RUNTIME_DIR=/temp' >> $RAGNAROOT/mnt/etc/init.d/S20weston
 echo 'export SDL_JOYSTICK_ALLOW_BACKGROUND_EVENTS=1' >> $RAGNAROOT/mnt/etc/init.d/S20weston
 echo "export SDL_GAMECONTROLLERCONFIG='03000000341200007856000000000000,Rinputer,a:b0,b:b1,x:b2,y:b3,back:b8,start:b9,leftshoulder:b4,rightshoulder:b5,dpup:b10,dpdown:b11,dpleft:b12,dpright:b13,leftx:a0,lefty:a1,rightx:a2,righty:a3,lefttrigger:b6,righttrigger:b7'" >> $RAGNAROOT/mnt/etc/init.d/S20weston
 echo 'if [ "$1" = "start" ]; then' >> $RAGNAROOT/mnt/etc/init.d/S20weston
-echo 'weston --config=/root/.config/weston.ini --drm-device=card1 --seat=0 --continue-without-input --shell=desktop-shell.so >/tmp/weston.log 2>&1 &' >> $RAGNAROOT/mnt/etc/init.d/S20weston
+echo 'weston --config=/root/.config/weston.ini --drm-device=card1 --seat=seat0 --tty 1 --continue-without-input --shell=kiosk-shell.so >/tmp/weston.log 2>&1 &' >> $RAGNAROOT/mnt/etc/init.d/S20weston
 echo 'echo $! > /tmp/weston_pid' >> $RAGNAROOT/mnt/etc/init.d/S20weston
 echo 'fi' >> $RAGNAROOT/mnt/etc/init.d/S20weston
 echo 'if [ "$1" = "stop" ]; then kill -9 $(cat /tmp/weston_pid); fi' >> $RAGNAROOT/mnt/etc/init.d/S20weston
@@ -100,6 +100,9 @@ cp $RAGNAROOT/mednafen.cfg $RAGNAROOT/mnt/.mednafen/mednafen.cfg
 cp $RAGNAROOT/tmp/buildroot/output/build/supertuxkart-1.3/lib/angelscript/projects/cmake/libangelscript.so.2.32.0 $RAGNAROOT/mnt/lib/
 cp $RAGNAROOT/tmp/buildroot/output/build/supertuxkart-1.3/lib/libsquish/libsquish.so.0.0 $RAGNAROOT/mnt/lib/
 cp $RAGNAROOT/tmp/buildroot/output/build/supertuxkart-1.3/lib/tinygettext/libtinygettext.so $RAGNAROOT/mnt/lib/
+
+# ppsspp wants it
+cp $RAGNAROOT/mnt/usr/lib/libglslang.so $RAGNAROOT/mnt/usr/lib/libglslang.so.11
 
 echo "Unmounting"
 umount $RAGNAROOT/mnt
