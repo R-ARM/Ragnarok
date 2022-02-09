@@ -69,7 +69,6 @@ mkdir -p $RAGNAROOT/mnt/temp
 chmod 700 $RAGNAROOT/mnt/temp
 echo '#!/bin/sh' > $RAGNAROOT/mnt/etc/init.d/S20weston
 echo 'export XDG_RUNTIME_DIR=/temp' >> $RAGNAROOT/mnt/etc/init.d/S20weston
-echo 'export SDL_JOYSTICK_ALLOW_BACKGROUND_EVENTS=1' >> $RAGNAROOT/mnt/etc/init.d/S20weston
 echo "export SDL_GAMECONTROLLERCONFIG='03000000341200007856000000000000,Rinputer,a:b0,b:b1,x:b2,y:b3,back:b8,guide:b10,start:b9,leftshoulder:b4,rightshoulder:b5,dpup:b11,dpdown:b12,dpleft:b13,dpright:b14,leftx:a0,lefty:a1,rightx:a2,righty:a3,lefttrigger:b6,righttrigger:b7'" >> $RAGNAROOT/mnt/etc/init.d/S20weston
 echo 'if [ "$1" = "start" ]; then' >> $RAGNAROOT/mnt/etc/init.d/S20weston
 echo 'weston --config=/root/.config/weston.ini --drm-device=card1 --seat=seat0 --tty 1 --continue-without-input --shell=kiosk-shell.so >/tmp/weston.log 2>&1 &' >> $RAGNAROOT/mnt/etc/init.d/S20weston
