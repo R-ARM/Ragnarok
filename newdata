@@ -1,0 +1,25 @@
+#!/bin/ash
+
+STATUS=$(cat /etc/datastatus)
+
+case $STATUS in
+        none)
+                START_LBA=$(expr 2 + "$(fdisk -l /dev/mmcblk0 | grep mmcblk0p1 | awk '{print $5}')")
+                printf "n\np\n2\n$START_LBA\n\nw\n" | fdisk /dev/mmcblk0
+                echo 'afterpart' > /etc/datastatus
+                /sbin/poweroff
+        ;;
+        afterpart)
+                mkfs.fat -F32 /dev/mmcblk0p2
+                mkdir -p /data
+                echo '/dev/mmcblk0p2 /data vfat rw,umask=0000 0 2' >> /etc/fstab
+                mount /dev/mmcblk0p2 /data -o rw,umask=0000
+		mkdir -p /data/Roms/GBA /data/Roms/GB /data/Roms/NES /data/Roms/SNES /data/Roms/PSP /data/Roms/MegaDrive /data/Roms/MasterSystem
+		mkdir -p /data/MusicPlaylists/
+		mkdir -p /data/Videos/
+		mkdir -p /data/PortData/
+                echo 'done' > /etc/datastatus
+        ;;
+	
+esac
+

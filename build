@@ -44,11 +44,6 @@ p
 1
 2048
 +4G
-n
-p
-2
-
-
 w
 ' | fdisk $SD
 partx $SD
@@ -56,7 +51,7 @@ partx $SD
 # system partition
 mkfs.ext4 -F ${SD}1
 # data partition
-mkfs.fat -F32 ${SD}2
+#mkfs.fat -F32 ${SD}2
 
 mkdir -p $RAGNAROOT/mnt
 mount ${SD}1 $RAGNAROOT/mnt
@@ -106,10 +101,16 @@ cp $RAGNAROOT/tmp/buildroot/output/build/supertuxkart-1.3/lib/tinygettext/libtin
 #cp $RAGNAROOT/mnt/usr/lib/libglslang.so $RAGNAROOT/mnt/usr/lib/libglslang.so.11
 cp $RAGNAROOT/tmp/buildroot/output/build/ppsspp-v1.12.2/lib/* $RAGNAROOT/mnt/usr/lib/
 
+cp $RAGNAROOT/newdata $RAGNAROOT/mnt/bin/newdata
+chmod a+x $RAGNAROOT/mnt/bin/newdata
+echo none > $RAGNAROOT/mnt/etc/datastatus
+
+echo '#!/bin/sh' > $RAGNAROOT/mnt/etc/init.d/S03newdata
+echo '[ $1 = start ] && newdata &' >> $RAGNAROOT/mnt/etc/init.d/S03newdata
+chmod a+x $RAGNAROOT/mnt/etc/init.d/S03newdata
+
 echo "Unmounting"
 umount $RAGNAROOT/mnt
-
-# TODO: data partition
 
 # u-boot
 dd if=$RAGNAROOT/tmp/u-boot/idbloader.img of=$SD bs=512 seek=64
