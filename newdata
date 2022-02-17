@@ -18,6 +18,8 @@ case $STATUS in
 		mkdir -p /data/MusicPlaylists/
 		mkdir -p /data/Videos/
 		mkdir -p /data/PortData/
+		mkdir -p /data/Saves/
+		mkdir -p /data/SaveStates/
                 echo 'done' > /etc/datastatus
         ;;
 	
