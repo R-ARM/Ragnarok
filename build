@@ -55,8 +55,7 @@ p
 2048
 
 w
-' | fdisk $SD || true
-partx -a $SD
+' | fdisk $SD || partx -a $SD
 
 # system partition
 mkfs.ext4 -F ${SD}${P}1
@@ -126,16 +125,15 @@ echo '#!/bin/sh
 /etc/init.d/S03newdata start &
 /etc/init.d/S04clocks.sh &
 exit 0
-' >> $RAGNAROOT/etc/init.d/rcS # perf hack
+' >> $RAGNAROOT/mnt/etc/init.d/rcS # perf hack
 
 echo '#!/bin/sh
 echo schedutil > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 echo schedutil > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor
 echo schedutil > /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor
 echo schedutil > /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor
-echo performance > /sys/class/devfreq/ff400000.gpu/governor
-' > $RAGNAROOT/etc/init.d/S04clocks.sh
-chmod a+x $RAGNAROOT/etc/init.d/S04clocks.sh
+' > $RAGNAROOT/mnt/etc/init.d/S04clocks.sh
+chmod a+x $RAGNAROOT/mnt/etc/init.d/S04clocks.sh
 
 echo "Unmounting"
 umount $RAGNAROOT/mnt
