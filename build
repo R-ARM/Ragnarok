@@ -21,6 +21,7 @@ mkdir -p $RAGNAROOT/tmp
 down_upd buildroot
 down_upd u-boot
 down_upd arm-trusted-firmware
+cd $RAGNAROOT
 
 # makes root and kernel
 #make -C $RAGNAROOT/tmp/buildroot r_defconfig
@@ -34,7 +35,16 @@ make bl31 CROSS_COMPILE=aarch64-linux-gnu- PLAT=px30 DEBUG=0 -C $RAGNAROOT/tmp/a
 env ARCH=arm CROSS_COMPILE=aarch64-linux-gnu- make -C $RAGNAROOT/tmp/u-boot r_defconfig
 env BL31=$RAGNAROOT/tmp/arm-trusted-firmware/build/px30/release/bl31/bl31.elf ARCH=arm CROSS_COMPILE=aarch64-linux-gnu- make -C $RAGNAROOT/tmp/u-boot -j$(nproc)
 
-SD="$1"
+if [ -n "$2" ]; then
+	fallocate "$1" -l "$2"
+	IMG="$(realpath $1)"
+	SD="$(losetup -f)"
+	losetup "$SD" "$IMG"
+	P="p"
+else
+	SD="$1"
+	P=""
+fi
 
 ls $SD || exit 1
 
@@ -43,18 +53,18 @@ n
 p
 1
 2048
-+4G
+
 w
-' | fdisk $SD
-partx $SD
+' | fdisk $SD || true
+partx -a $SD
 
 # system partition
-mkfs.ext4 -F ${SD}1
+mkfs.ext4 -F ${SD}${P}1
 # data partition
-#mkfs.fat -F32 ${SD}2
+#mkfs.fat -F32 ${SD}${P}2
 
 mkdir -p $RAGNAROOT/mnt
-mount ${SD}1 $RAGNAROOT/mnt
+mount ${SD}${P}1 $RAGNAROOT/mnt
 
 bsdtar xf $RAGNAROOT/tmp/buildroot/output/images/rootfs.tar -C $RAGNAROOT/mnt/
 cp $RAGNAROOT/tmp/buildroot/output/build/linux-new/arch/arm64/boot/dts/rockchip/rk3326*dtb $RAGNAROOT/mnt/boot/
@@ -109,9 +119,29 @@ echo '#!/bin/sh' > $RAGNAROOT/mnt/etc/init.d/S03newdata
 echo '[ $1 = start ] && newdata &' >> $RAGNAROOT/mnt/etc/init.d/S03newdata
 chmod a+x $RAGNAROOT/mnt/etc/init.d/S03newdata
 
+echo '#!/bin/sh
+/etc/init.d/S10udev start
+/etc/init.d/S20weston start
+/etc/init.d/S15Rinputer start &
+/etc/init.d/S03newdata start &
+/etc/init.d/S04clocks.sh &
+exit 0
+' >> $RAGNAROOT/etc/init.d/rcS # perf hack
+
+echo '#!/bin/sh
+echo schedutil > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+echo schedutil > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor
+echo schedutil > /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor
+echo schedutil > /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor
+echo performance > /sys/class/devfreq/ff400000.gpu/governor
+' > $RAGNAROOT/etc/init.d/S04clocks.sh
+chmod a+x $RAGNAROOT/etc/init.d/S04clocks.sh
+
 echo "Unmounting"
 umount $RAGNAROOT/mnt
 
 # u-boot
 dd if=$RAGNAROOT/tmp/u-boot/idbloader.img of=$SD bs=512 seek=64
 dd if=$RAGNAROOT/tmp/u-boot/u-boot.itb of=$SD bs=512 seek=512
+
+losetup -d "$SD"
