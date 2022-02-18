@@ -53,7 +53,7 @@ n
 p
 1
 2048
-
++1G
 w
 ' | fdisk $SD || partx -a $SD
 
