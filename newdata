@@ -12,8 +12,8 @@ case $STATUS in
         afterpart)
                 mkfs.fat -F32 /dev/mmcblk0p2
                 mkdir -p /data
-                echo '/dev/mmcblk0p2 /data vfat rw,umask=0000 0 2' >> /etc/fstab
-                mount /dev/mmcblk0p2 /data -o rw,umask=0000
+                echo '/dev/mmcblk0p2 /data vfat rw 0 2' >> /etc/fstab
+                mount /dev/mmcblk0p2 /data -o rw
 		mkdir -p /data/Roms/GBA /data/Roms/GB /data/Roms/NES /data/Roms/SNES /data/Roms/PSP /data/Roms/MegaDrive /data/Roms/MasterSystem
 		mkdir -p /data/MusicPlaylists/
 		mkdir -p /data/Videos/
