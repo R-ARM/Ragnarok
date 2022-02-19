@@ -135,6 +135,8 @@ echo schedutil > /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor
 ' > $RAGNAROOT/mnt/etc/init.d/S04clocks.sh
 chmod a+x $RAGNAROOT/mnt/etc/init.d/S04clocks.sh
 
+cp -r $RAGNAROOT/roms $RAGNAROOT/mnt/roms
+
 echo "Unmounting"
 umount $RAGNAROOT/mnt
 
