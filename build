@@ -125,7 +125,7 @@ echo '#!/bin/sh
 /etc/init.d/S03newdata start &
 /etc/init.d/S04clocks.sh &
 exit 0
-' >> $RAGNAROOT/mnt/etc/init.d/rcS # perf hack
+' > $RAGNAROOT/mnt/etc/init.d/rcS # perf hack
 
 echo '#!/bin/sh
 echo schedutil > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
