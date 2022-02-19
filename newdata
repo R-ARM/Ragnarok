@@ -3,12 +3,6 @@
 STATUS=$(cat /etc/datastatus)
 
 case $STATUS in
-        none)
-                START_LBA=$(expr 2 + "$(fdisk -l /dev/mmcblk0 | grep mmcblk0p1 | awk '{print $5}')")
-                printf "n\np\n2\n$START_LBA\n\nw\n" | fdisk /dev/mmcblk0
-                echo 'afterpart' > /etc/datastatus
-                /sbin/poweroff
-        ;;
         afterpart)
                 mkfs.fat -F32 /dev/mmcblk0p2
                 mkdir -p /data
@@ -20,8 +14,14 @@ case $STATUS in
 		mkdir -p /data/PortData/
 		mkdir -p /data/Saves/
 		mkdir -p /data/SaveStates/
+		cp /roms/GBA/* /data/Roms/GBA/
                 echo 'done' > /etc/datastatus
         ;;
-	
+        none)
+                START_LBA=$(expr 2 + "$(fdisk -l /dev/mmcblk0 | grep mmcblk0p1 | awk '{print $5}')")
+                printf "n\np\n2\n$START_LBA\n\nw\n" | fdisk /dev/mmcblk0
+                echo 'afterpart' > /etc/datastatus
+                exec /sbin/poweroff
+        ;;
 esac
 
