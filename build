@@ -55,7 +55,9 @@ p
 2048
 
 w
-' | fdisk $SD || partx -a $SD
+' | fdisk $SD || true
+
+ls ${SD}${P}1 || partx -a ${SD}
 
 # system partition
 mkfs.ext4 -F ${SD}${P}1
